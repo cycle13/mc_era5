@@ -7,6 +7,8 @@ import calendar
 import numpy as np
 
 
+columns = ['lon', 'lat', 'vo', 'time', 'area', 'vortex_type', 'slp']
+
 cat_kw = dict(filt_by_time=True, filt_by_dist=True, filt_by_vort=False,
               filt_by_percentile=True, strong_percentile=90,
               filt_by_domain_bounds=True, filt_by_land=True,
@@ -45,8 +47,8 @@ dset_names = (
     ('interim_run100', 'ERA-Interim, LVT')
 )
 
-START_YEAR = 2008
-nyr = 9
+START_YEAR = 2000
+nyr = 18
 winters = [f'{START_YEAR+i}_{START_YEAR+i+1}' for i in range(nyr)]
 winter_dates = {k: (f"{k.split('_')[0]}-10-01",
                     f"{k.split('_')[1]}-04-30")
