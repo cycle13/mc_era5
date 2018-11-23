@@ -43,8 +43,8 @@ datasets = ['era5', 'interim']
 
 dset_names = (
     ('era5_run000', 'ERA5, CTRL'),
-#     ('interim_run106', 'ERA-Interim, CTRL'),
-#     ('interim_run100', 'ERA-Interim, LVT')
+    #     ('interim_run106', 'ERA-Interim, CTRL'),
+    #     ('interim_run100', 'ERA-Interim, LVT')
 )
 
 START_YEAR = 2000
@@ -63,16 +63,18 @@ for yr in range(START_YEAR, START_YEAR + nyr):
 
 month_weights = 30 / ndays_per_month_total
 
+bbox = [-21, 51, 64, 86]
+
 conf_key_typeset = {
-    'zeta_max0': '$\zeta_{max}$',
-    'zeta_min0': '$\zeta_{min}$',
+    'zeta_max0': r'$\zeta_{max}$',
+    'zeta_min0': r'$\zeta_{min}$',
     'r_steering': '$r_{steer}$',
     'smth_type': 'Smoothing type',
     'r_smth': '$r_{smooth}$',
     'del_r': '$r_{link}$',
     'merge_opt': 'Merging option',
     'halo_r': '$r_{halo}$',
-    'vor_lvl': '$\zeta_{level}$',
+    'vor_lvl': r'$\zeta_{level}$',
 }
 
 
