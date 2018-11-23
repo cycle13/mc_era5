@@ -43,13 +43,14 @@ datasets = ['era5', 'interim']
 
 dset_names = (
     ('era5_run000', 'ERA5, CTRL'),
-    ('interim_run106', 'ERA-Interim, CTRL'),
-    ('interim_run100', 'ERA-Interim, LVT')
+#     ('interim_run106', 'ERA-Interim, CTRL'),
+#     ('interim_run100', 'ERA-Interim, LVT')
 )
 
 START_YEAR = 2000
 nyr = 18
 winters = [f'{START_YEAR+i}_{START_YEAR+i+1}' for i in range(nyr)]
+period = f'{winters[0][:4]}_{winters[-1][-4:]}'
 winter_dates = {k: (f"{k.split('_')[0]}-10-01",
                     f"{k.split('_')[1]}-04-30")
                 for k in winters}
