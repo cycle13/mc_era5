@@ -39,7 +39,7 @@ def parse_args(args=None):
 
     ag_sub = ap.add_argument_group(title='Subset')
     ag_sub.add_argument('-ll', '--lonlat', type=str,
-                        default=bbox,
+                        default=','.join([str(i) for i in bbox]),
                         help=('Lon-lat bounding box (lon0,lon1,lat0,lat1)'))
 
     return ap.parse_args(args)
@@ -80,11 +80,14 @@ def main(args=None):
 
     for dset, run_nums in pbar(runs2process.items(), desc='dset'):
         for run_num in pbar(run_nums, leave=False, desc='run_num'):
+            print(run_num)
             TR = TrackRun()
             for winter in pbar(winters, desc='winter', leave=False):
+                print(winter)
                 track_res_dir = (mypaths.trackresdir / dset
                                  / f'run{run_num:03d}' / winter)
                 _tr = TrackRun(track_res_dir, columns=columns)
+                print('Begin categorise()')
                 _tr.categorise(lsm=lsm, **cat_kw)
                 TR += _tr
 
