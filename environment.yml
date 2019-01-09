@@ -3,6 +3,7 @@ channels:
 - conda-forge
 - dennissergeev
 dependencies:
+- python=3.7
 - cartopy
 - cython
 - ipykernel
@@ -15,7 +16,6 @@ dependencies:
 - pandas
 - pyarrow
 - pytables
-- python=3.6
 - python-stratify
 - pytest
 - scipy
@@ -23,5 +23,7 @@ dependencies:
 - tqdm
 - xarray
 - pip:
+  - fastprogress
+  - loguru
   - cached_property
   - git+https://github.com/dennissergeev/arke.git
