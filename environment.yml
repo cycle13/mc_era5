@@ -1,7 +1,7 @@
 name: clim
 channels:
 - conda-forge
-- dennissergeev
+- dennissergeev/label/nightly
 dependencies:
 - python=3.7
 - cartopy
