@@ -117,15 +117,15 @@ def main(args=None):
 
     for dset, run_nums in pbar(runs2process.items()):  # , desc="dset"):
         for run_num in pbar(run_nums):  # , leave=False, desc="run_num"):
-            logger.INFO(run_num)
+            logger.info(run_num)
             full_tr = TrackRun()
             for winter in pbar(winters):  # , desc="winter", leave=False):
-                logger.INFO(f"winter: {winter}")
+                logger.info(f"winter: {winter}")
                 track_res_dir = mypaths.trackresdir / dset / f"run{run_num:03d}" / winter
                 _tr = TrackRun(track_res_dir, columns=columns)
-                logger.DEBUG(f"TrackRun size: {len(_tr)}")
+                logger.debug(f"TrackRun size: {len(_tr)}")
                 if len(_tr) > 0:
-                    logger.INFO("Begin classification")
+                    logger.info("Begin classification")
                     conditions = [
                         (
                             "pmc",
