@@ -11,18 +11,18 @@ dependencies:
 - iris
 - matplotlib
 - metpy
+- nbconvert
 - numpy
 - octant
 - pandas
 - pyarrow
 - pytables
-- python-stratify
 - pytest
 - scipy
 - scikit-learn
-- tqdm
 - xarray
 - pip:
+  - cdsapi
   - fastprogress
   - loguru
   - cached_property

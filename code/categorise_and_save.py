@@ -87,6 +87,9 @@ def get_lsm(path_to_file, bbox=None, shift=False):
         )
     # Set all non-zero values to 1 to make it the mask binary (0 or 1)
     lsm = lsm.where(lsm == 0, 1)
+    
+    lsm.attrs['units'] = 1
+
     return lsm
 
 
