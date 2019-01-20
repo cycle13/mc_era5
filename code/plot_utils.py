@@ -69,3 +69,7 @@ def div_cmap(numcolors=11, name='bwr_div_cmap',
     if over is not None:
         cmap.set_over(over)
     return cmap
+
+
+def use_style():
+    plt.style.use('paperfig.mplstyle')
