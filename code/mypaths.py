@@ -28,5 +28,6 @@ runsgridfile = trackresdir / "runs_grid.json"
 plotdir = topdir / "figures"
 
 # Reanalyses
-era5_dir = datadir / "reanalysis" / "era5"
-interim_dir = datadir / "reanalysis" / "interim"
+ra_dir = datadir / "reanalysis"
+era5_dir = ra_dir / "era5"
+interim_dir = ra_dir / "interim"
