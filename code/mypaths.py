@@ -14,7 +14,7 @@ starsdir = topdir / "data" / "tracks" / "stars"
 starstracks = starsdir / "PolarLow_tracks_North_2002_2011"
 
 # External data
-if "xcslc" in getenv("HOST") or "postproc" in getenv("HOST"):
+if getenv("HOST", "") in ["postproc", "xcslc0", "xcslc1"]:
     datadir = Path("/projects/accacia/deser")
     trackresdir = datadir / "pmctrack" / "output"
     procdir = datadir / "pmctrack" / "processed_data"
