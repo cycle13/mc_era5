@@ -116,7 +116,7 @@ def main(args=None):
     lon2d, lat2d = np.meshgrid(lsm.longitude, lsm.latitude)
 
     # Construct categorisation functions
-    mask_func = partial(check_by_mask, lsm=lsm, lmask_thresh=0.5, rad=70.0)
+    mask_func = partial(check_by_mask, lsm=lsm, lmask_thresh=0.5, rad=100.0)
 
     for dset, run_nums in pbar(runs2process.items()):  # , desc="dset"):
         for run_num in pbar(run_nums):  # , leave=False, desc="run_num"):
