@@ -5,7 +5,7 @@ from pathlib import Path
 
 
 # Top-level directory containing code and data (one level up)
-topdir = Path(__file__).absolute().parent
+topdir = Path(__file__).absolute().parent.parent
 
 # Local data
 accdir = topdir / "data" / "tracks" / "accacia"
