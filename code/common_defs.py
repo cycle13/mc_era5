@@ -9,6 +9,8 @@ import numpy as np
 # Columns of vortrack text files
 columns = ["lon", "lat", "vo", "time", "area", "vortex_type", "slp"]
 
+CAT = "pmc"
+
 # Deprecated since v0.0.17 of octant
 # cat_kw = dict(filt_by_time=True, filt_by_dist=True, filt_by_vort=False,
 #               filt_by_percentile=True, strong_percentile=90,
@@ -57,13 +59,17 @@ winter_dates = {k: (f"{k.split('_')[0]}-10-01", f"{k.split('_')[1]}-04-30") for 
 ndays_per_month_total = np.zeros((12), dtype=int)
 for yr in range(START_YEAR, START_YEAR + nyr):
     ndays_per_month_total += np.array(calendar.mdays[1:])
-    if calendar.isleap(yr + 1):  # +1 because we start from autumn
+    if calendar.isleap(yr + 1):
+        # +1 because we start from autumn
         ndays_per_month_total[1] += 1
 
 month_weights = 30 / ndays_per_month_total
 
 # Bounding box of study area
 bbox = [-21, 51, 64, 86]
+
+# Runs
+nruns = 17
 
 # For axis labels
 conf_key_typeset = {
