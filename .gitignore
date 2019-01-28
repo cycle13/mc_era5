@@ -1,3 +1,9 @@
+# Project-specific
+code/*.nc
+Untitled*.ipynb
+figures/*.png
+figures/*.pdf
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
