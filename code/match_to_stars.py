@@ -8,7 +8,7 @@ from octant.decor import get_pbar
 
 from common_defs import CAT, datasets, nruns, period, winters
 import mypaths
-from stars_api import read_tracks_file
+from stars_api import read_all
 
 
 match_options = [
@@ -24,6 +24,22 @@ match_options = [
 winter_dates_stars = {
     k: (f"{k.split('_')[0]}-10-01", f"{k.split('_')[1]}-04-30") for k in winters[1:11]
 }
+
+
+def prepare_stars(bbox=None):
+    """Make a list of those STARS tracks that have lifetime 6 h or greater."""
+    stars = read_all()
+
+    stars_tracks = []
+    for i, df in stars.groupby("N"):
+        ot = OctantTrack.from_df(df)
+        if ot.lifetime_h >= 6:
+            if bbox is not None:
+                if ot.within_rectangle(*bbox, thresh=0.5):
+                    stars_tracks.append(ot)
+            else:
+                stars_tracks.append(ot)
+    return stars_tracks
 
 
 def _make_match_label(match_kwargs, delim="_"):
@@ -43,24 +59,16 @@ def main():
     octant.RUNTIME.enable_progress_bar = False
     pbar = get_pbar(use="tqdm")
 
-    stars = read_tracks_file()
-    L.info(f"Number of STARS tracks: {stars.N.nunique()}")
-
-    # Create a list of only those STARS tracks that have lifetime 6 h or greater
-    stars_tracks = []
-    for i, df in stars.groupby("N"):
-        ot = OctantTrack.from_df(df)
-        if ot.lifetime_h >= 6:
-            stars_tracks.append(ot)
+    stars_tracks = prepare_stars()
     n_ref = len(stars_tracks)
-    L.info(f"Number of STARS tracks > 6h: {n_ref}")
+    L.info(f"Number of suitable STARS tracks: {n_ref}")
 
     # Define an output directory and create it if it doesn't exist
     output_dir = mypaths.procdir / "matches"
     output_dir.mkdir(exist_ok=True)
 
     # Loop over datasets, runs, subsets, matching methods
-    for dset in pbar(datasets[1:], desc="dataset"):
+    for dset in pbar(datasets, desc="dataset"):
         for run_num in pbar(range(nruns), desc="run_num"):
             TR = TrackRun.from_archive(mypaths.procdir / f"{dset}_run{run_num:03d}_{period}.h5")
             L.info(mypaths.procdir / f"{dset}_run{run_num:03d}_{period}.h5")

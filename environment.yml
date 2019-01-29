@@ -26,4 +26,5 @@ dependencies:
   - fastprogress
   - loguru
   - cached_property
+  - pre-commit 
   - git+https://github.com/dennissergeev/arke.git
