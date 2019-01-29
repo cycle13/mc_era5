@@ -2,13 +2,14 @@
 """Match cyclone tracks from ERA5 and ERA-Interim to STARS list of polar lows."""
 from loguru import logger as L
 
+import octant
 from octant.core import TrackRun, OctantTrack
-
-from tqdm import tqdm as tqdm
+from octant.decor import get_pbar
 
 from common_defs import CAT, datasets, nruns, period, winters
 import mypaths
 from stars_api import read_tracks_file
+
 
 match_options = [
     dict(method="bs2000", beta=25.0),
@@ -25,7 +26,7 @@ winter_dates_stars = {
 }
 
 
-def _make_match_label(match_kwargs):
+def _make_match_label(match_kwargs, delim="_"):
     match_kwargs_label = []
     for k, v in match_kwargs.items():
         try:
@@ -33,10 +34,15 @@ def _make_match_label(match_kwargs):
         except ValueError:
             vv = v
         match_kwargs_label.append(f"{k}={vv}")
-    return "_".join(match_kwargs_label)
+    return delim.join(match_kwargs_label)
 
 
+@L.catch
 def main():
+    L.add("log_match_to_stars_{time}.log")
+    octant.RUNTIME.enable_progress_bar = False
+    pbar = get_pbar(use="tqdm")
+
     stars = read_tracks_file()
     L.info(f"Number of STARS tracks: {stars.N.nunique()}")
 
@@ -54,13 +60,19 @@ def main():
     output_dir.mkdir(exist_ok=True)
 
     # Loop over datasets, runs, subsets, matching methods
-    for dset in datasets:
-        for run_num in tqdm(range(nruns), desc="run_num"):
+    for dset in pbar(datasets[1:], desc="dataset"):
+        for run_num in pbar(range(nruns), desc="run_num"):
             TR = TrackRun.from_archive(mypaths.procdir / f"{dset}_run{run_num:03d}_{period}.h5")
-            for match_kwargs in tqdm(match_options, desc="match options"):
+            L.info(mypaths.procdir / f"{dset}_run{run_num:03d}_{period}.h5")
+            L.info(TR)
+            for match_kwargs in pbar(match_options, desc="match options"):
                 match_pairs_abs = []
-                for winter, w_dates in tqdm(winter_dates_stars.items(), desc="winter"):
+                for winter, w_dates in pbar(winter_dates_stars.items(), desc="winter"):
                     tr = TR.time_slice(*w_dates)
+                    L.debug(tr)
+                    L.debug(run_num)
+                    L.debug(match_kwargs)
+                    L.debug(winter)
                     match_pairs = tr.match_tracks(stars_tracks, subset=CAT, **match_kwargs)
                     for match_pair in match_pairs:
                         match_pairs_abs.append(
