@@ -9,8 +9,8 @@ FIG_DIR=figures
 DATA_DIR=data
 
 FIGURES=\
-    $(FIG_DIR)/era5_vs_interim_accacia_case_vort_wspd.pdf \
-    $(FIG_DIR)/test1.png
+    $(FIG_DIR)/ascat_era5_interim_accacia_case_vort_wspd.pdf \
+    $(FIG_DIR)/vrf_vort_thresh_bs2000-100.pdf
 
 SCRIPTS=\
     $(CODE_DIR)/ACCACIA-Case-Example.ipynb
@@ -18,8 +18,8 @@ SCRIPTS=\
 DATA_IN=\
     $(DATA_DIR)/tracks/stars/PolarLow_tracks_North_2002_2011
 
-$(FIG_DIR)/era5_vs_interim_accacia_case_vort_wspd.pdf: $(CODE_DIR)/ACCACIA-Case-Example.ipynb
-$(FIG_DIR)/test1.png: $(CODE_DIR)/Untitled1.ipynb
+$(FIG_DIR)/ascat_era5_interim_accacia_case_vort_wspd.pdf: $(CODE_DIR)/ACCACIA-Case-Example.ipynb
+$(FIG_DIR)/vrf_vort_thresh_bs2000-100.pdf: $(CODE_DIR)/Verification.ipynb
 
 
 all: $(FIGURES)
