@@ -1,12 +1,13 @@
 # coding: utf-8
 """Match cyclone tracks from ERA5 and ERA-Interim to STARS list of polar lows."""
 from loguru import logger as L
+import sys
 
 import octant
 from octant.core import TrackRun, OctantTrack
 from octant.decor import get_pbar
 
-from common_defs import CAT, datasets, nruns, period, winters
+from common_defs import CAT, bbox, datasets, nruns, period, winters
 import mypaths
 from stars_api import read_all
 
@@ -55,27 +56,29 @@ def _make_match_label(match_kwargs, delim="_"):
 
 @L.catch
 def main():
+    L.remove(0)
     L.add("log_match_to_stars_{time}.log")
-    octant.RUNTIME.enable_progress_bar = False
+    octant.RUNTIME.enable_progress_bar = True
     pbar = get_pbar(use="tqdm")
+    octant.RUNTIME.enable_progress_bar = False
 
-    stars_tracks = prepare_stars()
+    stars_tracks = prepare_stars(bbox)
     n_ref = len(stars_tracks)
-    L.info(f"Number of suitable STARS tracks: {n_ref}")
+    L.debug(f"Number of suitable STARS tracks: {n_ref}")
 
     # Define an output directory and create it if it doesn't exist
     output_dir = mypaths.procdir / "matches"
     output_dir.mkdir(exist_ok=True)
 
     # Loop over datasets, runs, subsets, matching methods
-    for dset in pbar(datasets, desc="dataset"):
-        for run_num in pbar(range(nruns), desc="run_num"):
+    for dset in pbar(datasets):  # , desc="dataset"):
+        for run_num in pbar(range(nruns)):  # , desc="run_num"):
             TR = TrackRun.from_archive(mypaths.procdir / f"{dset}_run{run_num:03d}_{period}.h5")
-            L.info(mypaths.procdir / f"{dset}_run{run_num:03d}_{period}.h5")
-            L.info(TR)
-            for match_kwargs in pbar(match_options, desc="match options"):
+            L.debug(mypaths.procdir / f"{dset}_run{run_num:03d}_{period}.h5")
+            L.debug(TR)
+            for match_kwargs in pbar(match_options):  # , desc="match options"):
                 match_pairs_abs = []
-                for winter, w_dates in pbar(winter_dates_stars.items(), desc="winter"):
+                for winter, w_dates in pbar(winter_dates_stars.items()):  # , desc="winter"):
                     tr = TR.time_slice(*w_dates)
                     L.debug(tr)
                     L.debug(run_num)
