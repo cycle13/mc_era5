@@ -45,7 +45,7 @@ datasets = ["era5", "interim"]
 
 dset_names = (
     ("era5_run000", "ERA5, CTRL"),
-    #     ('interim_run106', 'ERA-Interim, CTRL'),
+    ("interim_run100", "ERA-Interim, CTRL"),
     #     ('interim_run100', 'ERA-Interim, LVT')
 )
 
