@@ -48,6 +48,7 @@ dset_names = (
     ("interim_run100", "ERA-Interim, CTRL"),
     #     ('interim_run100', 'ERA-Interim, LVT')
 )
+dset_ctrl_tstep_h = {"era5": 1, "interim": 3}
 
 # Time period parameters
 START_YEAR = 2000
