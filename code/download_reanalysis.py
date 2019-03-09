@@ -106,6 +106,14 @@ def parse_args(args=None):
     ap.add_argument(
         "-t", "--timestep", type=int, required=True, choices=[1, 3, 6], help="Time step (h)"
     )
+    ap.add_argument(
+        "--hours",
+        type=str,
+        required=False,
+        choices=["all", "midday"],
+        default="all",
+        help="All times of the day or 12:00 (e.g. for sea ice)",
+    )
 
     ap.add_argument(
         "--slice",
@@ -159,8 +167,10 @@ def main(args=None):
     L.info(f"varnames = {varnames}")
 
     tstep = args.timestep
-    times = "/".join(["{:02d}:00".format(i) for i in range(0, 24, tstep)])
-    # times = '12:00:00'
+    if args.hours == "all":
+        times = "/".join(["{:02d}:00".format(i) for i in range(0, 24, tstep)])
+    elif args.hours == "midday":
+        times = "12:00:00"
 
     base_req = {
         "product_type": PRODUCT_TYPE,
