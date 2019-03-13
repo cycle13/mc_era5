@@ -14,7 +14,7 @@ starsdir = topdir / "data" / "tracks" / "stars"
 starstracks = starsdir / "PolarLow_tracks_North_2002_2011"
 
 # External data
-if getenv("CRAY_BINUTILS_BIN") is not None:
+if getenv("TRUSTZONE") is not None:
     # if on MONSooN
     datadir = Path("/projects/accacia/deser")
     trackresdir = datadir / "pmctrack" / "output"
