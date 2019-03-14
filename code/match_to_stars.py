@@ -1,5 +1,6 @@
 # coding: utf-8
 """Match cyclone tracks from ERA5 and ERA-Interim to STARS list of polar lows."""
+import json
 from loguru import logger as L
 import sys
 
@@ -7,7 +8,7 @@ import octant
 from octant.core import TrackRun, OctantTrack
 from octant.decor import get_pbar
 
-from common_defs import CAT, bbox, datasets, nruns, period, winters
+from common_defs import CAT, bbox, datasets, period, winters
 import mypaths
 from stars_api import read_all
 
@@ -24,6 +25,11 @@ match_options = [
 ]
 winter_dates_stars = {
     k: (f"{k.split('_')[0]}-10-01", f"{k.split('_')[1]}-04-30") for k in winters[1:11]
+}
+run_group_start = 100
+runs_grid_paths = {
+    "era5": mypaths.procdir / "runs_grid_tfreq_era5.json",
+    "interim": mypaths.procdir / "runs_grid_tfreq_interim.json",
 }
 
 
@@ -72,16 +78,18 @@ def main():
 
     # Loop over datasets, runs, subsets, matching methods
     for dset in pbar(datasets):  # , desc="dataset"):
-        for run_num in pbar(range(nruns)):  # , desc="run_num"):
-            TR = TrackRun.from_archive(mypaths.procdir / f"{dset}_run{run_num:03d}_{period}.h5")
-            L.debug(mypaths.procdir / f"{dset}_run{run_num:03d}_{period}.h5")
+        with runs_grid_paths[dset].open("r") as fp:
+            runs_grid = json.load(fp)
+        for run_id, _ in pbar(enumerate(runs_grid, run_group_start)):
+            TR = TrackRun.from_archive(mypaths.procdir / f"{dset}_run{run_id:03d}_{period}.h5")
+            L.debug(mypaths.procdir / f"{dset}_run{run_id:03d}_{period}.h5")
             L.debug(TR)
             for match_kwargs in pbar(match_options):  # , desc="match options"):
                 match_pairs_abs = []
                 for winter, w_dates in pbar(winter_dates_stars.items()):  # , desc="winter"):
                     tr = TR.time_slice(*w_dates)
                     L.debug(tr)
-                    L.debug(run_num)
+                    L.debug(run_id)
                     L.debug(match_kwargs)
                     L.debug(winter)
                     match_pairs = tr.match_tracks(stars_tracks, subset=CAT, **match_kwargs)
@@ -92,11 +100,11 @@ def main():
                 match_kwargs_label = _make_match_label(match_kwargs)
 
                 # Save matching pairs to a text file
-                fname = f"{dset}_run{run_num:03d}_{period}_{match_kwargs_label}.txt"
+                fname = f"{dset}_run{run_id:03d}_{period}_{match_kwargs_label}.txt"
                 with (output_dir / fname).open("w") as fout:
                     fout.write(
                         f"""# {dset}
-# {run_num:03d}
+# {run_id:03d}
 # {period}
 # {match_kwargs_label}
 """
