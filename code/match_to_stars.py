@@ -2,15 +2,14 @@
 """Match cyclone tracks from ERA5 and ERA-Interim to STARS list of polar lows."""
 import json
 from loguru import logger as L
-import sys
 
 import octant
-from octant.core import TrackRun, OctantTrack
+from octant.core import TrackRun
 from octant.decor import get_pbar
 
 from common_defs import CAT, bbox, datasets, period, winters
 import mypaths
-from stars_api import read_all
+from obs_tracks_api import read_all_stars, prepare_tracks
 
 
 match_options = [
@@ -23,7 +22,7 @@ match_options = [
     dict(method="simple", thresh_dist=250.0),
     dict(method="simple", thresh_dist=300.0),
 ]
-winter_dates_stars = {
+winter_dates_dict = {
     k: (f"{k.split('_')[0]}-10-01", f"{k.split('_')[1]}-04-30") for k in winters[1:11]
 }
 run_group_start = 100
@@ -31,22 +30,6 @@ runs_grid_paths = {
     "era5": mypaths.procdir / "runs_grid_tfreq_era5.json",
     "interim": mypaths.procdir / "runs_grid_tfreq_interim.json",
 }
-
-
-def prepare_stars(bbox=None):
-    """Make a list of those STARS tracks that have lifetime 6 h or greater."""
-    stars = read_all()
-
-    stars_tracks = []
-    for i, df in stars.groupby("N"):
-        ot = OctantTrack.from_df(df)
-        if ot.lifetime_h >= 6:
-            if bbox is not None:
-                if ot.within_rectangle(*bbox, thresh=0.5):
-                    stars_tracks.append(ot)
-            else:
-                stars_tracks.append(ot)
-    return stars_tracks
 
 
 def _make_match_label(match_kwargs, delim="_"):
@@ -68,9 +51,9 @@ def main():
     pbar = get_pbar(use="tqdm")
     octant.RUNTIME.enable_progress_bar = False
 
-    stars_tracks = prepare_stars(bbox)
-    n_ref = len(stars_tracks)
-    L.debug(f"Number of suitable STARS tracks: {n_ref}")
+    obs_tracks = prepare_tracks(read_all_stars(), bbox)
+    n_ref = len(obs_tracks)
+    L.debug(f"Number of suitable tracks: {n_ref}")
 
     # Define an output directory and create it if it doesn't exist
     output_dir = mypaths.procdir / "matches"
@@ -86,16 +69,16 @@ def main():
             L.debug(TR)
             for match_kwargs in pbar(match_options):  # , desc="match options"):
                 match_pairs_abs = []
-                for winter, w_dates in pbar(winter_dates_stars.items()):  # , desc="winter"):
+                for winter, w_dates in pbar(winter_dates_dict.items()):  # , desc="winter"):
                     tr = TR.time_slice(*w_dates)
                     L.debug(tr)
                     L.debug(run_id)
                     L.debug(match_kwargs)
                     L.debug(winter)
-                    match_pairs = tr.match_tracks(stars_tracks, subset=CAT, **match_kwargs)
+                    match_pairs = tr.match_tracks(obs_tracks, subset=CAT, **match_kwargs)
                     for match_pair in match_pairs:
                         match_pairs_abs.append(
-                            (match_pair[0], stars_tracks[match_pair[1]].N.unique()[0])
+                            (match_pair[0], obs_tracks[match_pair[1]].N.unique()[0])
                         )
                 match_kwargs_label = _make_match_label(match_kwargs)
 
