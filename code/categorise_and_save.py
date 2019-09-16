@@ -2,7 +2,6 @@
 """Categorise selected runs and serialise TrackRun object for later use."""
 import argparse
 import sys
-from functools import partial
 from pathlib import Path
 from textwrap import dedent
 
@@ -12,16 +11,16 @@ import numpy as np
 
 from octant.core import TrackRun
 from octant.decor import get_pbar
-from octant.misc import check_by_mask
+from octant.misc import add_domain_bounds_to_mask, check_by_arr_thresh, check_by_mask
 
 import xarray as xr
 
-from common_defs import bbox, columns, period, winters
+from common_defs import bbox, columns, period, winters, SMOOTH_FUNC, SMOOTH_KW
 import mypaths
 
 # Select runs
 # runs2process = dict(era5=[0])  # , interim=[100, 106])
-SCRIPT = Path(__file__).stem
+SCRIPT = Path(__file__).name
 lsm_paths = {"era5": mypaths.era5_dir / "lsm.nc", "interim": mypaths.interim_dir / "lsm.nc"}
 
 
@@ -53,6 +52,11 @@ def parse_args(args=None):
         type=str,
         required=True,
         help="Run numbers, comma- or dash-separated (inclusive range)",
+    )
+    ap.add_argument(
+        "--betterlandmask",
+        action="store_true",
+        help=("Use smoothed ERA5 land mask for both reanalyses"),
     )
 
     ag_sub = ap.add_argument_group(title="Subset")
@@ -86,9 +90,9 @@ def get_lsm(path_to_file, bbox=None, shift=False):
             latitude=(lsm.latitude >= bbox[2]) & (lsm.latitude <= bbox[3]),
         )
     # Set all non-zero values to 1 to make it the mask binary (0 or 1)
-    lsm = lsm.where(lsm == 0, 1)
+    # lsm = lsm.where(lsm == 0, 1)
 
-    lsm.attrs['units'] = 1
+    lsm.attrs["units"] = 1
 
     return lsm
 
@@ -110,13 +114,44 @@ def main(args=None):
         runs = [int(i) for i in args.runs.split(",")]
     runs2process = {args.name: runs}
 
-    lonlat_box = [int(i) for i in args.lonlat.split(",")]
+    outer_box = [int(i) for i in args.lonlat.split(",")]
+    inner_box = [outer_box[0] + 1, outer_box[1] - 1, outer_box[2] + 1, outer_box[3] - 1]
 
-    lsm = get_lsm(lsm_paths[args.name], bbox=lonlat_box, shift=True)
-    lon2d, lat2d = np.meshgrid(lsm.longitude, lsm.latitude)
+    if args.betterlandmask:
+        mask = get_lsm(lsm_paths["era5"], bbox=outer_box, shift=True)
+        mask = xr.apply_ufunc(SMOOTH_FUNC, mask, kwargs=SMOOTH_KW)
+        mask = add_domain_bounds_to_mask(mask, inner_box)
+    else:
+        mask = get_lsm(lsm_paths[args.name], bbox=outer_box, shift=True)
+    lon2d, lat2d = np.meshgrid(mask.longitude, mask.latitude)
 
-    # Construct categorisation functions
-    mask_func = partial(check_by_mask, lsm=lsm, lmask_thresh=0.5, rad=100.0)
+    # Additional arguments for land-mask function
+    # mask_func_kw = dict(lsm=mask, lmask_thresh=0.5, dist=100.0)
+    conditions = [
+        (
+            "pmc",
+            [
+                # 0. Mesoscale
+                lambda ot: ((ot.vortex_type != 0).sum() / ot.shape[0] < 0.2),
+                # 1. Non-stationary
+                lambda ot: ot.total_dist_km >= 100.0,
+                # 2. Far from orography and domain boundaries
+                lambda ot: check_by_mask(
+                    ot,
+                    None,  # Do not pass TrackRun because domain boundaries are already in `mask`
+                    mask,
+                    lmask_thresh=0.2,
+                    time_frac=0.2,
+                    dist=60.0,
+                    check_domain_bounds=False,
+                ),
+                # 3. Maritime genesis
+                lambda ot: check_by_arr_thresh(
+                    ot.xs(0, level="row_idx"), arr=mask, arr_thresh=0.2, oper="le", dist=120.0
+                ),
+            ],
+        )
+    ]
 
     for dset, run_nums in pbar(runs2process.items()):  # , desc="dset"):
         for run_num in pbar(run_nums):  # , leave=False, desc="run_num"):
@@ -129,17 +164,6 @@ def main(args=None):
                 logger.debug(f"TrackRun size: {len(_tr)}")
                 if len(_tr) > 0:
                     logger.info("Begin classification")
-                    conditions = [
-                        (
-                            "pmc",
-                            [
-                                lambda ot: ot.lifetime_h >= 6,
-                                partial(mask_func, trackrun=_tr),
-                                lambda ot: ((ot.vortex_type != 0).sum() / ot.shape[0] < 0.2)
-                                and (ot.gen_lys_dist_km > 300.0),
-                            ],
-                        )
-                    ]
                     _tr.classify(conditions, True)
                 full_tr += _tr
 
