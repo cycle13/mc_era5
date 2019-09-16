@@ -53,16 +53,17 @@ def read_all_accacia():
     return df
 
 
-def prepare_tracks(obs_df, bbox=None):
-    """Make a list of those tracks that have lifetime >= 6h and stay within bounding box."""
+def prepare_tracks(obs_df, filter_funcs=[]):
+    """Make a list of those tracks that satisfy the list of conditions."""
 
     selected = []
     for i, df in obs_df.groupby("N"):
         ot = OctantTrack.from_df(df)
-        if ot.lifetime_h >= 6:
-            if bbox is not None:
-                if ot.within_rectangle(*bbox, thresh=0.5):
-                    selected.append(ot)
-            else:
-                selected.append(ot)
+
+        flag = True
+        for func in filter_funcs:
+            flag &= func(ot)
+
+        if flag:
+            selected.append(ot)
     return selected
