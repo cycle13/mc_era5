@@ -8,12 +8,8 @@ import string
 import cartopy.crs as ccrs
 import matplotlib as mpl
 
-# from matplotlib.offsetbox import AnchoredText
 import matplotlib.pyplot as plt
 import numpy as np
-
-# import arke
-# import misc_utils as misc
 
 
 cc = plt.rcParams["axes.prop_cycle"]
