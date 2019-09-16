@@ -1,5 +1,5 @@
 # coding: utf-8
-"""Match cyclone tracks from ERA5 and ERA-Interim to STARS list of polar lows."""
+"""Match cyclone tracks from ERA5 and ERA-Interim to ACCACIA PMCs."""
 import json
 from loguru import logger as L
 
@@ -9,7 +9,7 @@ from octant.decor import get_pbar
 
 from common_defs import CAT, bbox, datasets, period, winters
 import mypaths
-from obs_tracks_api import read_all_stars, prepare_tracks
+from obs_tracks_api import read_all_accacia, prepare_tracks
 
 
 match_options = [
@@ -23,12 +23,12 @@ match_options = [
     dict(method="simple", thresh_dist=300.0),
 ]
 winter_dates_dict = {
-    k: (f"{k.split('_')[0]}-10-01", f"{k.split('_')[1]}-04-30") for k in winters[1:11]
+    "accacia": ("2013-03-15", "2013-04-05")
 }
-run_group_start = 100
+run_group_start = 0
 runs_grid_paths = {
-    "era5": mypaths.procdir / "runs_grid_tfreq_era5.json",
-    "interim": mypaths.procdir / "runs_grid_tfreq_interim.json",
+    "era5": mypaths.procdir / "runs_grid_vort_thresh_era5.json",
+    "interim": mypaths.procdir / "runs_grid_vort_thresh_interim.json",
 }
 
 
@@ -46,13 +46,13 @@ def _make_match_label(match_kwargs, delim="_"):
 @L.catch
 def main():
     L.remove(0)
-    L.add("log_match_to_stars_{time}.log")
+    L.add("log_match_to_accacia_{time}.log")
     octant.RUNTIME.enable_progress_bar = True
     pbar = get_pbar(use="tqdm")
     octant.RUNTIME.enable_progress_bar = False
 
     obs_tracks = prepare_tracks(
-        read_all_stars(), filter_func=[lambda ot: ot.within_rectangle(*bbox)]
+        read_all_accacia(), filter_func=[lambda ot: ot.within_rectangle(*bbox)]
     )
     n_ref = len(obs_tracks)
     L.debug(f"Number of suitable tracks: {n_ref}")
@@ -85,7 +85,7 @@ def main():
                 match_kwargs_label = _make_match_label(match_kwargs)
 
                 # Save matching pairs to a text file
-                fname = f"{dset}_run{run_id:03d}_{period}_{match_kwargs_label}.txt"
+                fname = f"{dset}_run{run_id:03d}_{period}_{match_kwargs_label}_accacia.txt"
                 with (output_dir / fname).open("w") as fout:
                     fout.write(
                         f"""# {dset}
