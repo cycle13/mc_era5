@@ -116,11 +116,14 @@ def main(args=None):
 
     outer_box = [int(i) for i in args.lonlat.split(",")]
     inner_box = [outer_box[0] + 1, outer_box[1] - 1, outer_box[2] + 1, outer_box[3] - 1]
+    gen_box = [outer_box[0] + 1, outer_box[1] - 1, outer_box[2] + 1, outer_box[3] - 3]
 
     if args.betterlandmask:
         mask = get_lsm(lsm_paths["era5"], bbox=outer_box, shift=True)
         mask = xr.apply_ufunc(SMOOTH_FUNC, mask, kwargs=SMOOTH_KW)
         mask = add_domain_bounds_to_mask(mask, inner_box)
+        # Additional constraint on genesis over sea ice covered area
+        gen_mask = add_domain_bounds_to_mask(mask, gen_box)
     else:
         mask = get_lsm(lsm_paths[args.name], bbox=outer_box, shift=True)
     lon2d, lat2d = np.meshgrid(mask.longitude, mask.latitude)
@@ -131,11 +134,13 @@ def main(args=None):
         (
             "pmc",
             [
-                # 0. Mesoscale
+                # Mesoscale
                 lambda ot: ((ot.vortex_type != 0).sum() / ot.shape[0] < 0.2),
-                # 1. Non-stationary
-                lambda ot: ot.total_dist_km >= 100.0,
-                # 2. Far from orography and domain boundaries
+                # Sensible speed
+                lambda ot: (ot.average_speed / 3.6) <= 30,
+                # Non-stationary
+                lambda ot: ot.total_dist_km >= 100.0 and ot.lifetime_h >= 3.0,
+                # Far from orography and domain boundaries
                 lambda ot: check_by_mask(
                     ot,
                     None,  # Do not pass TrackRun because domain boundaries are already in `mask`
@@ -145,9 +150,9 @@ def main(args=None):
                     dist=60.0,
                     check_domain_bounds=False,
                 ),
-                # 3. Maritime genesis
+                # Maritime genesis
                 lambda ot: check_by_arr_thresh(
-                    ot.xs(0, level="row_idx"), arr=mask, arr_thresh=0.2, oper="le", dist=120.0
+                    ot.xs(0, level="row_idx"), arr=gen_mask, arr_thresh=0.2, oper="le", dist=120.0
                 ),
             ],
         )
