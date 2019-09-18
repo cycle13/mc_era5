@@ -55,9 +55,6 @@ bbox = [-21, 51, 64, 86]
 # Additional bbox, equivalent to TrackRun.conf.extent
 inner_bbox = [-20, 50, 65, 85]
 
-# Runs
-nruns = 17
-
 # Geographical names to put on map plots
 toponyms = [
     dict(name="Svalbard", lon=20, lat=79),

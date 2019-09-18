@@ -1,7 +1,8 @@
 # coding: utf-8
-"""Match cyclone tracks from ERA5 and ERA-Interim to STARS list of polar lows."""
+"""Match cyclone tracks from ERA5 and ERA-Interim to a reference list of polar lows."""
 import json
 from loguru import logger as L
+from pathlib import Path
 
 import octant
 from octant.core import TrackRun
@@ -9,8 +10,15 @@ from octant.decor import get_pbar
 
 from common_defs import CAT, bbox, datasets, period, winters
 import mypaths
-from obs_tracks_api import read_all_stars, prepare_tracks
+from obs_tracks_api import read_all_accacia, read_all_stars, prepare_tracks
 
+
+run_group_start = 100
+runs_grid_paths = {
+    "era5": mypaths.procdir / "runs_grid_tfreq_era5.json",
+    "interim": mypaths.procdir / "runs_grid_tfreq_interim.json",
+}
+NAME = "stars"
 
 match_options = [
     dict(method="bs2000", beta=25.0),
@@ -22,13 +30,20 @@ match_options = [
     dict(method="simple", thresh_dist=250.0),
     dict(method="simple", thresh_dist=300.0),
 ]
-winter_dates_dict = {
-    k: (f"{k.split('_')[0]}-10-01", f"{k.split('_')[1]}-04-30") for k in winters[1:11]
-}
-run_group_start = 100
-runs_grid_paths = {
-    "era5": mypaths.procdir / "runs_grid_tfreq_era5.json",
-    "interim": mypaths.procdir / "runs_grid_tfreq_interim.json",
+
+REF_DATASETS = {
+    "stars": {
+        "time_dict": {
+            k: (f"{k.split('_')[0]}-10-01", f"{k.split('_')[1]}-04-30") for k in winters[1:11]
+        },
+        "load_func": read_all_stars,
+        "filter_func": [lambda ot: ot.within_rectangle(*bbox) and ot.lifetime_h >= 3],
+    },
+    "accacia": {
+        "time_dict": {"accacia": ("2013-03-15", "2013-04-05")},
+        "load_func": read_all_accacia,
+        "filter_func": [lambda ot: ot.within_rectangle(*bbox) and ot.lifetime_h >= 3],
+    },
 }
 
 
@@ -45,14 +60,16 @@ def _make_match_label(match_kwargs, delim="_"):
 
 @L.catch
 def main():
+    LOGPATH = Path(__file__).parent / "logs"
+    LOGPATH.mkdir(exist_ok=True)
     L.remove(0)
-    L.add("log_match_to_stars_{time}.log")
+    L.add(LOGPATH / "log_match_to_{NAME}_{time}.log")
     octant.RUNTIME.enable_progress_bar = True
     pbar = get_pbar(use="tqdm")
     octant.RUNTIME.enable_progress_bar = False
 
     obs_tracks = prepare_tracks(
-        read_all_stars(), filter_func=[lambda ot: ot.within_rectangle(*bbox)]
+        REF_DATASETS[NAME]["load_func"], filter_func=REF_DATASETS[NAME]["filter_func"]
     )
     n_ref = len(obs_tracks)
     L.debug(f"Number of suitable tracks: {n_ref}")
@@ -71,7 +88,7 @@ def main():
             L.debug(TR)
             for match_kwargs in pbar(match_options):  # , desc="match options"):
                 match_pairs_abs = []
-                for winter, w_dates in pbar(winter_dates_dict.items()):  # , desc="winter"):
+                for winter, w_dates in pbar(REF_DATASETS[NAME]["time_dict"].items()):
                     tr = TR.time_slice(*w_dates)
                     L.debug(tr)
                     L.debug(run_id)
