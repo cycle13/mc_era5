@@ -13,22 +13,22 @@ import mypaths
 from obs_tracks_api import read_all_accacia, read_all_stars, prepare_tracks
 
 
-run_group_start = 100
+run_group_start = 0
 runs_grid_paths = {
-    "era5": mypaths.procdir / "runs_grid_tfreq_era5.json",
-    "interim": mypaths.procdir / "runs_grid_tfreq_interim.json",
+    "era5": mypaths.procdir / "runs_grid_vort_thresh_era5.json",
+    "interim": mypaths.procdir / "runs_grid_vort_thresh_interim.json",
 }
-NAME = "stars"
+NAME = "accacia"
 
 match_options = [
     dict(method="bs2000", beta=25.0),
     dict(method="bs2000", beta=50.0),
     dict(method="bs2000", beta=75.0),
     dict(method="bs2000", beta=100.0),
-    dict(method="simple", thresh_dist=150.0),
-    dict(method="simple", thresh_dist=200.0),
-    dict(method="simple", thresh_dist=250.0),
-    dict(method="simple", thresh_dist=300.0),
+    # dict(method="simple", thresh_dist=150.0),
+    # dict(method="simple", thresh_dist=200.0),
+    # dict(method="simple", thresh_dist=250.0),
+    # dict(method="simple", thresh_dist=300.0),
 ]
 
 REF_DATASETS = {
@@ -62,14 +62,14 @@ def _make_match_label(match_kwargs, delim="_"):
 def main():
     LOGPATH = Path(__file__).parent / "logs"
     LOGPATH.mkdir(exist_ok=True)
-    L.remove(0)
-    L.add(LOGPATH / "log_match_to_{NAME}_{time}.log")
+    # L.remove(0)
+    L.add(LOGPATH / f"log_match_to_{NAME}_{{time}}.log")
     octant.RUNTIME.enable_progress_bar = True
     pbar = get_pbar(use="tqdm")
     octant.RUNTIME.enable_progress_bar = False
 
     obs_tracks = prepare_tracks(
-        REF_DATASETS[NAME]["load_func"], filter_func=REF_DATASETS[NAME]["filter_func"]
+        REF_DATASETS[NAME]["load_func"](), filter_funcs=REF_DATASETS[NAME]["filter_func"]
     )
     n_ref = len(obs_tracks)
     L.debug(f"Number of suitable tracks: {n_ref}")
@@ -102,7 +102,7 @@ def main():
                 match_kwargs_label = _make_match_label(match_kwargs)
 
                 # Save matching pairs to a text file
-                fname = f"{dset}_run{run_id:03d}_{period}_{match_kwargs_label}.txt"
+                fname = f"{dset}_run{run_id:03d}_{period}_{NAME}_{match_kwargs_label}.txt"
                 with (output_dir / fname).open("w") as fout:
                     fout.write(
                         f"""# {dset}
