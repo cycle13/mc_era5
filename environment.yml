@@ -17,6 +17,7 @@ dependencies:
 - pyarrow
 - pytables
 - pytest
+- rasterio
 - scipy
 - scikit-learn
 - xarray
